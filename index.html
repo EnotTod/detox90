@@ -616,7 +616,7 @@ function getState() {
 function saveState(s) { localStorage.setItem('detox90_v3', JSON.stringify(s)); }
 function getDays(start) {
   if (!start) return 0;
-  return Math.floor((Date.now() - start) / 86400000);
+  return Math.floor((Date.now() - start) / 86400000) + 1;
 }
 
 function getDayData(days) {
