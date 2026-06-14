@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="90 дней">
+<meta name="theme-color" content="#0f0f0f">
+<title>90 дней свободы</title>
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%237F77DD'/><text y='.9em' font-size='60' x='50%' text-anchor='middle'>🛡️</text></svg>">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0f0f0f;
+    --bg2: #1a1a1a;
+    --bg3: #252525;
+    --border: rgba(255,255,255,0.08);
+    --text: #f0f0f0;
+    --muted: #888;
+    --accent: #7F77DD;
+    --accent2: #534AB7;
+    --green: #1D9E75;
+    --green-bg: rgba(29,158,117,0.12);
+    --red: #D85A30;
+    --red-bg: rgba(216,90,48,0.12);
+    --amber: #BA7517;
+    --amber-bg: rgba(186,117,23,0.12);
+  }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+    min-height: 100vh;
+    padding-bottom: env(safe-area-inset-bottom);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* HEADER */
+  .top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    padding-top: calc(env(safe-area-inset-top) + 16px);
+  }
+  .app-title { font-size: 13px; color: var(--muted); font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; }
+  .attempts-badge {
+    background: var(--bg3);
+    border: 0.5px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .attempts-badge span { color: var(--text); font-weight: 500; }
+
+  /* MAIN COUNTER */
+  .counter-section {
+    text-align: center;
+    padding: 20px 20px 8px;
+  }
+  .day-number {
+    font-size: 88px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1;
+    letter-spacing: -4px;
+  }
+  .day-suffix { font-size: 28px; font-weight: 400; color: var(--muted); letter-spacing: 0; }
+  .day-sublabel { font-size: 14px; color: var(--muted); margin-top: 6px; }
+
+  /* PROGRESS BAR */
+  .progress-wrap { padding: 16px 20px 0; }
+  .progress-track {
+    background: var(--bg3);
+    border-radius: 99px;
+    height: 4px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    border-radius: 99px;
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .progress-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+  }
+  .progress-labels span { font-size: 11px; color: var(--muted); }
+
+  /* STATS ROW */
+  .stats-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    padding: 16px 20px;
+  }
+  .stat-card {
+    background: var(--bg2);
+    border: 0.5px solid var(--border);
+    border-radius: 14px;
+    padding: 12px 10px;
+    text-align: center;
+  }
+  .stat-val { font-size: 22px; font-weight: 600; color: var(--text); }
+  .stat-lab { font-size: 10px; color: var(--muted); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.04em; }
+
+  /* CURRENT STATUS */
+  .status-block {
+    margin: 0 20px 12px;
+    background: var(--bg2);
+    border: 0.5px solid var(--border);
+    border-radius: 18px;
+    padding: 16px;
+    overflow: hidden;
+  }
+  .status-block.green { border-color: var(--green); background: var(--green-bg); }
+  .status-block.red { border-color: var(--red); background: var(--red-bg); }
+  .status-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .status-label.green { color: var(--green); }
+  .status-label.red { color: var(--red); }
+  .status-heading { font-size: 17px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+  .status-body { font-size: 14px; color: var(--muted); line-height: 1.6; }
+
+  /* BODY CHANGES GRID */
+  .section-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0 20px;
+    margin-bottom: 10px;
+  }
+  .changes-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 0 20px;
+    margin-bottom: 12px;
+  }
+  .change-card {
+    background: var(--bg2);
+    border: 0.5px solid var(--border);
+    border-radius: 14px;
+    padding: 12px;
+  }
+  .change-icon { font-size: 20px; margin-bottom: 6px; }
+  .change-title { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+  .change-val { font-size: 12px; color: var(--muted); line-height: 1.4; }
+  .change-card.highlight { border-color: var(--accent); background: rgba(127,119,221,0.1); }
+  .change-card.highlight .change-title { color: var(--accent); }
+
+  /* ACHIEVEMENTS */
+  .achievements-list { padding: 0 20px; }
+  .ach-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 0.5px solid var(--border);
+  }
+  .ach-item:last-child { border-bottom: none; }
+  .ach-icon {
+    width: 38px; height: 38px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .ach-icon.done { background: rgba(127,119,221,0.2); }
+  .ach-icon.locked { background: var(--bg3); opacity: 0.3; }
+  .ach-text { flex: 1; }
+  .ach-name { font-size: 14px; font-weight: 500; }
+  .ach-name.done { color: var(--text); }
+  .ach-name.locked { color: var(--muted); }
+  .ach-desc { font-size: 12px; color: var(--muted); margin-top: 2px; line-height: 1.4; }
+  .ach-day { font-size: 11px; color: var(--muted); flex-shrink: 0; }
+  .ach-day.done { color: var(--accent); }
+
+  /* BUTTONS */
+  .buttons-section { padding: 16px 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .btn {
+    border: none;
+    border-radius: 16px;
+    font-size: 16px;
+    font-weight: 600;
+    padding: 18px 10px;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.1s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn:active { transform: scale(0.96); }
+  .btn-ok { background: var(--accent); color: white; }
+  .btn-fail { background: var(--bg3); color: var(--red); border: 0.5px solid rgba(216,90,48,0.3); }
+
+  /* FAIL MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.75);
+    display: flex; align-items: flex-end; justify-content: center;
+    z-index: 100;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s;
+  }
+  .modal-overlay.show { opacity: 1; pointer-events: all; }
+  .modal-sheet {
+    background: var(--bg2);
+    border-radius: 24px 24px 0 0;
+    padding: 8px 20px 40px;
+    width: 100%; max-width: 480px;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .modal-overlay.show .modal-sheet { transform: translateY(0); }
+  .modal-handle { width: 36px; height: 4px; background: var(--bg3); border-radius: 99px; margin: 12px auto 20px; }
+  .modal-icon { text-align: center; font-size: 40px; margin-bottom: 12px; }
+  .modal-title { font-size: 20px; font-weight: 700; text-align: center; margin-bottom: 8px; }
+  .modal-days { font-size: 15px; color: var(--muted); text-align: center; line-height: 1.6; margin-bottom: 16px; }
+  .modal-restart-text {
+    background: var(--red-bg);
+    border: 0.5px solid rgba(216,90,48,0.3);
+    border-radius: 14px;
+    padding: 14px;
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 20px;
+  }
+  .modal-restart-text strong { color: var(--red); }
+  .modal-btns { display: grid; gap: 8px; }
+  .btn-confirm-fail { background: var(--red); color: white; border: none; border-radius: 14px; padding: 16px; font-size: 16px; font-weight: 600; cursor: pointer; }
+  .btn-back { background: var(--bg3); color: var(--muted); border: none; border-radius: 14px; padding: 16px; font-size: 16px; font-weight: 500; cursor: pointer; }
+
+  .divider { height: 1px; background: var(--border); margin: 16px 20px; }
+  .section-wrap { margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="app-title">90 дней свободы</div>
+  <div class="attempts-badge">попытка <span id="attemptsNum">1</span></div>
+</div>
+
+<div class="counter-section">
+  <div class="day-number" id="dayNum">0<span class="day-suffix">д</span></div>
+  <div class="day-sublabel" id="daySubLabel">нажми «Держусь» чтобы начать</div>
+</div>
+
+<div class="progress-wrap">
+  <div class="progress-track">
+    <div class="progress-fill" id="progressFill" style="width:0%"></div>
+  </div>
+  <div class="progress-labels">
+    <span>день 1</span>
+    <span id="progressLabel">0 / 90</span>
+    <span>день 90</span>
+  </div>
+</div>
+
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="stat-val" id="bestStat">0</div>
+    <div class="stat-lab">рекорд</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-val" id="achStat">0</div>
+    <div class="stat-lab">ачивок</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-val" id="attemptsStat">0</div>
+    <div class="stat-lab">попыток</div>
+  </div>
+</div>
+
+<div id="statusBlock" class="status-block" style="display:none">
+  <div class="status-label" id="statusLabel"></div>
+  <div class="status-heading" id="statusHeading"></div>
+  <div class="status-body" id="statusBody"></div>
+</div>
+
+<div id="changesSection" class="section-wrap" style="display:none">
+  <div class="section-title">что изменилось в теле</div>
+  <div class="changes-grid" id="changesGrid"></div>
+</div>
+
+<div id="restartSection" class="section-wrap" style="display:none">
+  <div class="section-title">что сбрасывается при срыве</div>
+  <div class="changes-grid" id="restartGrid"></div>
+</div>
+
+<div class="divider"></div>
+<div class="section-wrap">
+  <div class="section-title">достижения</div>
+  <div class="achievements-list" id="achList"></div>
+</div>
+
+<div class="buttons-section">
+  <button class="btn btn-ok" onclick="handleOk()">💪 Держусь</button>
+  <button class="btn btn-fail" onclick="showFailModal()">❌ Сорвался</button>
+</div>
+
+<div class="modal-overlay" id="modal" onclick="closeModal(event)">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-icon">💔</div>
+    <div class="modal-title" id="modalTitle">Ты уверен?</div>
+    <div class="modal-days" id="modalDays"></div>
+    <div class="modal-restart-text" id="modalRestartText"></div>
+    <div class="modal-btns">
+      <button class="btn-confirm-fail" onclick="handleFail()">Да, сорвался — начать заново</button>
+      <button class="btn-back" onclick="closeModal(null)">Нет, держусь дальше</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── DATA ──────────────────────────────────────────────────────────────────
+
+const DAYS = {
+  0: {
+    title: "Прямо сейчас",
+    headline: "Реши прямо сейчас",
+    body: "Каждый день курения добавляет 10 минут к времени восстановления лёгких. Сегодняшний ты — самый молодой ты, который ещё может это сделать.",
+    changes: [],
+    resets: []
+  },
+  1: {
+    title: "День 1",
+    headline: "Никотин уходит из крови",
+    body: "Первые 2-4 часа ещё спокойно — никотин ещё в крови. Потом придёт первая волна тяги. Она длится ровно 3 минуты. Засеки время — ты переживёшь её.",
+    changes: [
+      { icon: "🫁", title: "Лёгкие", val: "Кислород начинает поступать эффективнее уже через 8 часов", hl: false },
+      { icon: "❤️", title: "Сердце", val: "ЧСС снизится на 10-20 ударов/мин к вечеру", hl: false },
+      { icon: "🧠", title: "Мозг", val: "Рецепторы никотина начинают ждать следующей дозы", hl: false },
+      { icon: "🩸", title: "Кровь", val: "CO (угарный газ) выводится в течение 8 часов", hl: true },
+    ],
+    resets: [
+      { icon: "🫁", title: "Лёгкие", val: "Снова начнут накапливать смолы" },
+      { icon: "❤️", title: "ЧСС", val: "Вернётся к уровню курильщика" },
+      { icon: "⚡", title: "Энергия", val: "Снизится — тело снова в зависимости" },
+      { icon: "🧠", title: "Мозг", val: "Перезапустит дофаминовую петлю никотина" },
+    ]
+  },
+  2: {
+    title: "День 2",
+    headline: "Головная боль — это хороший знак",
+    body: "Никотин в крови почти ноль. Голова болит, туман, раздражительность — тело в острой фазе детокса. Это значит что зависимость реально разрушается.",
+    changes: [
+      { icon: "🫁", title: "Лёгкие", val: "Реснички в бронхах оживают — начнут выталкивать слизь", hl: true },
+      { icon: "😤", title: "Кашель", val: "Усилится — это лёгкие очищаются, не болезнь", hl: false },
+      { icon: "😴", title: "Сон", val: "Тревожный, яркие сны — никотин влиял на фазы сна", hl: false },
+      { icon: "💊", title: "Детокс", val: "Печень активно выводит метаболиты никотина", hl: false },
+    ],
+    resets: [
+      { icon: "🫁", title: "Реснички", val: "Снова замедлятся под действием никотина" },
+      { icon: "😤", title: "Кашель", val: "Слизь перестанет выводиться — осядет в лёгких" },
+      { icon: "😴", title: "Сон", val: "Останется нарушенным из-за никотиновых циклов" },
+      { icon: "💊", title: "Детокс", val: "Придётся начинать заново" },
+    ]
+  },
+  3: {
+    title: "День 3 — самый тяжёлый",
+    headline: "Физическая зависимость сломана",
+    body: "Сегодня — ключевой день. Никотин полностью вышел из организма. Физической зависимости больше нет — осталась только психологическая. Но именно сейчас тяга максимальная. Волны по 3-5 минут. Не сдавайся.",
+    changes: [
+      { icon: "⚗️", title: "Никотин", val: "Полностью выведен из крови — физическая зависимость сломана", hl: true },
+      { icon: "🧠", title: "Дофамин", val: "Мозг в шоке — привычный источник стимуляции исчез", hl: false },
+      { icon: "😤", title: "Кашель", val: "Максимальный — лёгкие активно чистятся", hl: false },
+      { icon: "⚡", title: "NoFap д.3", val: "Агрессия и либидо одновременно на пике", hl: false },
+    ],
+    resets: [
+      { icon: "⚗️", title: "Никотин", val: "Физическая зависимость восстановится за 3 дня" },
+      { icon: "🧠", title: "Рецепторы", val: "Снова адаптируются под никотин — круг замкнётся" },
+      { icon: "📅", title: "Прогресс", val: "3 тяжёлых дня придётся пройти заново" },
+      { icon: "💔", title: "Психология", val: "Мозг запомнит что ты сдался — следующий раз тяжелее" },
+    ]
+  },
+  4: {
+    title: "День 4",
+    headline: "Тело поняло — никотина не будет",
+    body: "Физически чуть легче. Психологические волны тяги есть, но они управляемые. Вкус еды начинает возвращаться — пей воду, ешь фрукты, дай себе почувствовать разницу.",
+    changes: [
+      { icon: "👅", title: "Вкус", val: "Первые признаки возврата — еда становится ярче", hl: true },
+      { icon: "🫁", title: "Лёгкие", val: "Объём воздуха немного вырос — замечаешь при ходьбе", hl: false },
+      { icon: "💪", title: "NoFap", val: "Либидо высокое, энергия направляется куда-то ещё", hl: false },
+      { icon: "👋", title: "Руки", val: "Не знают куда деться — найди физическую замену жесту", hl: false },
+    ],
+    resets: [
+      { icon: "👅", title: "Вкус", val: "Снова притупится — никотин сужает сосуды носа" },
+      { icon: "💪", title: "Энергия NoFap", val: "Сброс на ноль если сорвался на оба пункта" },
+      { icon: "🫁", title: "Бронхи", val: "Слизь снова начнёт накапливаться" },
+      { icon: "🔄", title: "Привычка", val: "Тело снова зафиксирует никотин как норму" },
+    ]
+  },
+  5: {
+    title: "День 5",
+    headline: "Запахи и вкусы возвращаются",
+    body: "Вкус и запах заметно острее. Еда вкуснее, запахи интенсивнее. Тяга к курению уже не постоянная — только на триггеры: кофе, стресс, после еды. Учись их обходить.",
+    changes: [
+      { icon: "👃", title: "Запах", val: "Чувствуешь запахи которых не замечал годами", hl: true },
+      { icon: "☕", title: "Триггеры", val: "Кофе, после еды, стресс — главные враги этой недели", hl: false },
+      { icon: "🩸", title: "Кровь", val: "Насыщение кислородом стабильно выше нормы курильщика", hl: false },
+      { icon: "😤", title: "NoFap", val: "День 5: взрыв уверенности начинается", hl: false },
+    ],
+    resets: [
+      { icon: "👃", title: "Обоняние", val: "Снова снизится — никотин сужает сосуды носа и рта" },
+      { icon: "👅", title: "Вкус", val: "Притупится за 48 часов после срыва" },
+      { icon: "🩸", title: "SpO2", val: "Кислород в крови снизится при первой же сигарете" },
+      { icon: "💪", title: "NoFap", val: "Придётся начинать цикл восстановления заново" },
+    ]
+  },
+  6: {
+    title: "День 6",
+    headline: "Запах тела меняется",
+    body: "Люди рядом замечают что ты пахнешь иначе — нейтральнее, чище. Сон улучшается: просыпаешься бодрее. Тяга управляемая — волна приходит, длится 3 минуты, уходит.",
+    changes: [
+      { icon: "💨", title: "Запах тела", val: "Нейтрализуется — никотин и смолы уже не выходят с потом", hl: true },
+      { icon: "😴", title: "Сон", val: "Глубже — никотин разрушал фазу быстрого сна", hl: false },
+      { icon: "🦷", title: "Дёсны", val: "Кровоснабжение улучшается — дёсны розовее", hl: false },
+      { icon: "⚡", title: "NoFap", val: "Социальная смелость растёт — хочется говорить с людьми", hl: false },
+    ],
+    resets: [
+      { icon: "💨", title: "Запах", val: "Вернётся через 6-12 часов после первой сигареты" },
+      { icon: "😴", title: "Сон", val: "Снова нарушится — никотин подавляет мелатонин" },
+      { icon: "🦷", title: "Дёсны", val: "Снова начнут страдать от никотинового спазма" },
+      { icon: "💪", title: "NoFap", val: "Нейронная перестройка начинается заново" },
+    ]
+  },
+  7: {
+    title: "День 7 — первый рубеж",
+    headline: "Суперсила дня 7",
+    body: "Классический эффект NoFap: энергия высокая, взгляд прямой, голос тверже. Лёгкие работают заметно свободнее. Статистика: 80% тех кто пережил 7 дней доходят до месяца.",
+    changes: [
+      { icon: "⚡", title: "Энергия", val: "Подъём — оба процесса (NoFap + без никотина) дают синергию", hl: true },
+      { icon: "🫁", title: "Лёгкие", val: "Дышат свободнее — чистка на 20% завершена", hl: true },
+      { icon: "🧠", title: "Тестостерон", val: "Пик на 7-й день по многим исследованиям NoFap", hl: false },
+      { icon: "👁️", title: "Внешность", val: "Лицо менее серое — кровообращение улучшилось", hl: false },
+    ],
+    resets: [
+      { icon: "⚡", title: "Суперсила", val: "Исчезнет — тело снова потратит ресурс на детокс" },
+      { icon: "🧠", title: "Тестостерон", val: "Упадёт — оба цикла восстановления сбросятся" },
+      { icon: "🫁", title: "Прогресс лёгких", val: "7 дней чистки потеряно" },
+      { icon: "📊", title: "Статистика", val: "Выходишь из 80% группы доходящих до месяца" },
+    ]
+  },
+  10: {
+    title: "День 10",
+    headline: "Только психология осталась",
+    body: "Физических симптомов отмены больше нет. Остался чистый психологический крючок — привычка, ритуал, скука. Осознай это: тело уже свободно, мозг ещё нет.",
+    changes: [
+      { icon: "🧠", title: "Психология", val: "Тяга теперь только условная — триггер→реакция, без физики", hl: true },
+      { icon: "🫁", title: "Лёгкие", val: "Кашель меняет характер — становится продуктивнее", hl: false },
+      { icon: "🌙", title: "Сон", val: "Полностью восстановлен, сновидения яркие", hl: false },
+      { icon: "💪", title: "NoFap", val: "«Плато» — взрывная энергия спала, но базовый уровень выше", hl: false },
+    ],
+    resets: [
+      { icon: "🧠", title: "Психология", val: "Физические симптомы вернутся — придётся пройти 3 тяжёлых дня снова" },
+      { icon: "🌙", title: "Сон", val: "Нарушится на 3-5 дней" },
+      { icon: "📅", title: "10 дней", val: "Потеряно. Лёгкие снова начнут накапливать смолы" },
+      { icon: "🔄", title: "Цикл", val: "Каждый срыв делает следующую попытку психологически сложнее" },
+    ]
+  },
+  14: {
+    title: "2 недели",
+    headline: "Лёгкие дышат иначе",
+    body: "При подъёме по лестнице — замечаешь разницу. Кровообращение в лёгких улучшилось. NoFap 14 дней: социальная уверенность выросла, отношение к людям меняется — меньше поверхностного интереса.",
+    changes: [
+      { icon: "🫁", title: "Лёгкие", val: "Кровообращение улучшилось, лестница уже не проблема", hl: true },
+      { icon: "🏃", title: "Выносливость", val: "Заметно при любой нагрузке — бег, ходьба, лестница", hl: false },
+      { icon: "✨", title: "Кожа", val: "Начинает светлеть — серость уходит", hl: true },
+      { icon: "💪", title: "NoFap 2 нед.", val: "Уверенность в разговоре с людьми выросла ощутимо", hl: false },
+    ],
+    resets: [
+      { icon: "🫁", title: "Лёгкие", val: "2 недели прогресса лёгких утеряно" },
+      { icon: "🏃", title: "Выносливость", val: "Упадёт до уровня активного курильщика" },
+      { icon: "✨", title: "Кожа", val: "Снова станет серой — никотин сужает капилляры кожи" },
+      { icon: "💔", title: "14 дней", val: "Потеряно. Начнётся с нуля" },
+    ]
+  },
+  21: {
+    title: "3 недели",
+    headline: "Привычка сформирована",
+    body: "21 день — классическая точка формирования новой привычки. Ты уже не куришь через силу — просто не куришь. Мозг перестраивает дофаминовую систему. Простые вещи начинают приносить больше удовольствия.",
+    changes: [
+      { icon: "🧠", title: "Привычка", val: "21 день — нейронный паттерн «не курить» зафиксирован", hl: true },
+      { icon: "😄", title: "Дофамин", val: "Простые вещи — вкусная еда, музыка — приятнее", hl: true },
+      { icon: "🫁", title: "Лёгкие", val: "Чистка на 40% — дышишь глубже без усилий", hl: false },
+      { icon: "💪", title: "NoFap 3 нед.", val: "Стабильная уверенность без спадов", hl: false },
+    ],
+    resets: [
+      { icon: "🧠", title: "Привычка", val: "Нейронный паттерн «не курю» ломается" },
+      { icon: "😄", title: "Дофамин", val: "Снова зависим от быстрого дофамина — никотин и мастурбация" },
+      { icon: "🫁", title: "40% чистки лёгких", val: "Потеряно — накопление смол возобновится" },
+      { icon: "📅", title: "21 день", val: "Один из самых болезненных срывов по времени потерь" },
+    ]
+  },
+  30: {
+    title: "1 месяц",
+    headline: "Риск инфаркта снизился на 50%",
+    body: "Месяц — это трансформация. Риск сердечного приступа уже вдвое ниже. Тестостерон стабильно высокий. Люди замечают изменения внешности. Ты чувствуешь себя другим человеком физически.",
+    changes: [
+      { icon: "❤️", title: "Сердце", val: "Риск инфаркта снизился на 50% vs активный курильщик", hl: true },
+      { icon: "🧬", title: "Тестостерон", val: "Стабильно высокий — синергия NoFap + без никотина", hl: true },
+      { icon: "✨", title: "Кожа", val: "Коллаген восстанавливается — видят окружающие", hl: false },
+      { icon: "😤", title: "Тяга", val: "Редкие волны, не постоянный фон", hl: false },
+    ],
+    resets: [
+      { icon: "❤️", title: "Сердце", val: "Риск инфаркта снова вырастет до уровня курильщика" },
+      { icon: "🧬", title: "Тестостерон", val: "Упадёт — никотин снижает его, мастурбация расходует" },
+      { icon: "✨", title: "30 дней внешности", val: "Кожа снова начнёт стареть быстрее" },
+      { icon: "📅", title: "Месяц работы", val: "Потерян. Это много." },
+    ]
+  },
+  45: {
+    title: "45 дней — половина",
+    headline: "Ты на полпути",
+    body: "Тяга к курению — 1-2 раза в неделю при сильном триггере. Каждая волна короче предыдущей. Лёгкие очищены больше чем наполовину. Мозг перекалибровал понятие «нормально».",
+    changes: [
+      { icon: "🫁", title: "Лёгкие", val: "Очищены на 55-60% — функция заметно выросла", hl: true },
+      { icon: "🏃", title: "Спорт", val: "Выносливость на 20-30% выше чем в день 1", hl: false },
+      { icon: "🧠", title: "Мозг", val: "«Нормально» теперь — это без никотина и без ПМО", hl: false },
+      { icon: "💪", title: "NoFap", val: "Либидо стабильное, направлено на реальных людей", hl: false },
+    ],
+    resets: [
+      { icon: "🫁", title: "55% чистки", val: "Потеряно. Лёгкие снова начнут набирать смолы" },
+      { icon: "🏃", title: "Выносливость", val: "Упадёт — SpO2 снизится с первой же сигаретой" },
+      { icon: "🧠", title: "Перекалибровка мозга", val: "Сброс — дофаминовая система снова привяжется к никотину и ПМО" },
+      { icon: "📅", title: "45 дней", val: "Полтора месяца работы потеряно" },
+    ]
+  },
+  60: {
+    title: "2 месяца",
+    headline: "Мозговое кровообращение нормализовалось",
+    body: "Мышление чище — мозг получает больше кислорода. Эмоциональная стабильность: меньше резких перепадов. Лёгкие очищены на 70%. Ты уже давно не тот человек что начинал.",
+    changes: [
+      { icon: "🧠", title: "Мозг", val: "Кровообращение нормализовалось — фокус и память лучше", hl: true },
+      { icon: "🫁", title: "Лёгкие", val: "Функция выросла на 10-30% от исходной", hl: true },
+      { icon: "😌", title: "Эмоции", val: "Стабильнее — меньше тревоги, меньше раздражительности", hl: false },
+      { icon: "💤", title: "Сон", val: "Глубокий сон на 25-30% длиннее чем у курильщика", hl: false },
+    ],
+    resets: [
+      { icon: "🧠", title: "2 месяца восстановления мозга", val: "Потеряно" },
+      { icon: "🫁", title: "70% чистки", val: "Потеряно — это самый дорогой срыв" },
+      { icon: "😌", title: "Стабильность", val: "Эмоциональные качели вернутся — никотин нарушает норадреналин" },
+      { icon: "💤", title: "Качество сна", val: "Снизится — вернётся тревожность и поверхностный сон" },
+    ]
+  },
+  75: {
+    title: "75 дней",
+    headline: "Ты другой — это видно всем",
+    body: "Кожа, зубы, запах тела — другие. Люди замечают без подсказок. Последний психологический тест: мозг иногда пробрасывает «а вдруг уже можно?». Ответ: одна сигарета перезапускает зависимость за 3 дня.",
+    changes: [
+      { icon: "✨", title: "Кожа", val: "Изменения видны всем — коллаген, капилляры, цвет", hl: true },
+      { icon: "🦷", title: "Зубы", val: "Светлее, дёсны здоровее — снижен риск пародонтита", hl: false },
+      { icon: "💨", title: "Запах", val: "Нейтральный — от тела, волос, дыхания", hl: true },
+      { icon: "💪", title: "NoFap", val: "75 дней: мозг почти полностью перестроен", hl: false },
+    ],
+    resets: [
+      { icon: "✨", title: "75 дней кожи", val: "Никотин снова начнёт разрушать коллаген и сужать капилляры" },
+      { icon: "🦷", title: "Зубы и дёсны", val: "Снова начнут желтеть и болеть" },
+      { icon: "💨", title: "Запах", val: "Никотиновый запах вернётся через 24 часа" },
+      { icon: "📅", title: "75 дней", val: "Потеряно. Осталось всего 15 до финала." },
+    ]
+  },
+  90: {
+    title: "90 дней — свобода",
+    headline: "Ты сделал это",
+    body: "Риск инфаркта как у некурящего человека твоего возраста. NoFap 90 дней: мозг полностью перестроил дофаминовую систему. Лёгкие продолжат восстанавливаться ещё год. Это уже не «держусь» — это просто твоя жизнь.",
+    changes: [
+      { icon: "❤️", title: "Сердце", val: "Риск инфаркта = некурящий человек твоего возраста", hl: true },
+      { icon: "🫁", title: "Лёгкие", val: "Восстановлены на 80%+ — продолжат расти ещё год", hl: true },
+      { icon: "🧠", title: "Мозг", val: "Дофаминовая система перестроена — ты получаешь удовольствие от жизни", hl: true },
+      { icon: "⏳", title: "Жизнь", val: "Ты добавил себе годы — буквально", hl: false },
+    ],
+    resets: [
+      { icon: "❤️", title: "Здоровье сердца", val: "Риск снова вырастет до уровня курильщика" },
+      { icon: "🧠", title: "90 дней перестройки", val: "Потеряно. Самый дорогой срыв в этом списке." },
+      { icon: "⏳", title: "Годы жизни", val: "Снова начнут убывать быстрее" },
+      { icon: "🏆", title: "Финиш", val: "Остановился в 15 метрах от финиша" },
+    ]
+  }
+};
+
+const ACHIEVEMENTS = [
+  { day: 1,  emoji: "🔥", name: "Первый шаг",      desc: "Никотин начал уходить из крови" },
+  { day: 3,  emoji: "⛈️", name: "Шторм пройден",   desc: "Самый тяжёлый день позади — физика закончилась" },
+  { day: 7,  emoji: "⚡", name: "Суперсила",        desc: "День 7 — энергия и уверенность на пике" },
+  { day: 10, emoji: "🧠", name: "Только психология",desc: "Физической зависимости больше нет" },
+  { day: 14, emoji: "🫁", name: "Дышу иначе",       desc: "Лёгкие заметно свободнее, лестница легче" },
+  { day: 21, emoji: "🎯", name: "Новая привычка",   desc: "21 день — нейронный паттерн зафиксирован" },
+  { day: 30, emoji: "🏆", name: "Месяц свободы",    desc: "Риск инфаркта снизился на 50%" },
+  { day: 45, emoji: "🌓", name: "Половина пути",    desc: "55% лёгких очищено, тяга почти ушла" },
+  { day: 60, emoji: "🧬", name: "Мозг перестроен",  desc: "Мышление чище, эмоции стабильнее" },
+  { day: 75, emoji: "✨", name: "Виден всем",       desc: "Кожа, зубы, запах — изменения очевидны" },
+  { day: 90, emoji: "🌟", name: "90 дней свободы",  desc: "Риск инфаркта как у некурящего" },
+];
+
+// ─── STATE ──────────────────────────────────────────────────────────────────
+
+function getState() {
+  return JSON.parse(localStorage.getItem('detox90_v3') || '{"start":null,"attempts":0,"best":0}');
+}
+function saveState(s) { localStorage.setItem('detox90_v3', JSON.stringify(s)); }
+function getDays(start) {
+  if (!start) return 0;
+  return Math.floor((Date.now() - start) / 86400000);
+}
+
+function getDayData(days) {
+  const keys = Object.keys(DAYS).map(Number).sort((a,b) => b - a);
+  for (const k of keys) {
+    if (days >= k) return { ...DAYS[k], key: k };
+  }
+  return { ...DAYS[0], key: 0 };
+}
+
+// ─── RENDER ─────────────────────────────────────────────────────────────────
+
+function renderChanges(items, containerId) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = items.map(c => `
+    <div class="change-card ${c.hl ? 'highlight' : ''}">
+      <div class="change-icon">${c.icon}</div>
+      <div class="change-title">${c.title}</div>
+      <div class="change-val">${c.val}</div>
+    </div>`).join('');
+}
+
+function render() {
+  const s = getState();
+  const days = getDays(s.start);
+  const data = getDayData(days);
+  const pct = Math.min(100, (days / 90) * 100);
+  const unlocked = ACHIEVEMENTS.filter(a => days >= a.day).length;
+
+  document.getElementById('dayNum').innerHTML = days + '<span class="day-suffix">д</span>';
+  document.getElementById('daySubLabel').textContent = days === 0
+    ? 'нажми «Держусь» чтобы начать'
+    : days === 1 ? '1 день без зависимости' : `${days} дней без зависимости`;
+
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = `${days} / 90`;
+  document.getElementById('bestStat').textContent = s.best || 0;
+  document.getElementById('achStat').textContent = unlocked;
+  document.getElementById('attemptsStat').textContent = s.attempts || 0;
+  document.getElementById('attemptsNum').textContent = s.attempts || 0;
+
+  const sb = document.getElementById('statusBlock');
+  if (data) {
+    sb.style.display = '';
+    sb.className = 'status-block ' + (days > 0 ? 'green' : '');
+    document.getElementById('statusLabel').className = 'status-label ' + (days > 0 ? 'green' : '');
+    document.getElementById('statusLabel').textContent = data.title;
+    document.getElementById('statusHeading').textContent = data.headline;
+    document.getElementById('statusBody').textContent = data.body;
+  }
+
+  const changesSection = document.getElementById('changesSection');
+  const restartSection = document.getElementById('restartSection');
+
+  if (days > 0 && data.changes && data.changes.length) {
+    changesSection.style.display = '';
+    renderChanges(data.changes, 'changesGrid');
+  } else {
+    changesSection.style.display = 'none';
+  }
+
+  if (days > 0 && data.resets && data.resets.length) {
+    restartSection.style.display = '';
+    renderChanges(data.resets.map(r => ({ ...r, hl: false })), 'restartGrid');
+  } else {
+    restartSection.style.display = 'none';
+  }
+
+  document.getElementById('achList').innerHTML = ACHIEVEMENTS.map(a => {
+    const done = days >= a.day;
+    return `<div class="ach-item">
+      <div class="ach-icon ${done ? 'done' : 'locked'}">${a.emoji}</div>
+      <div class="ach-text">
+        <div class="ach-name ${done ? 'done' : 'locked'}">${a.name}</div>
+        <div class="ach-desc">${a.desc}</div>
+      </div>
+      <div class="ach-day ${done ? 'done' : ''}">д. ${a.day}</div>
+    </div>`;
+  }).join('');
+}
+
+// ─── ACTIONS ────────────────────────────────────────────────────────────────
+
+function handleOk() {
+  const s = getState();
+  if (!s.start) {
+    s.start = Date.now();
+    s.attempts = (s.attempts || 0) + 1;
+    saveState(s);
+  }
+  render();
+  if (window.navigator.vibrate) window.navigator.vibrate(50);
+}
+
+function showFailModal() {
+  const s = getState();
+  const days = getDays(s.start);
+
+  if (days === 0) {
+    document.getElementById('modalTitle').textContent = 'Ты ещё не начал';
+    document.getElementById('modalDays').textContent = 'Нажми «Держусь» — это твой первый шаг.';
+    document.getElementById('modalRestartText').innerHTML = 'Кнопка «Сорвался» есть только для тех кто уже держится.';
+  } else {
+    const data = getDayData(days);
+    const resetItems = data.resets || [];
+    document.getElementById('modalTitle').textContent = `${days} дней будет потеряно`;
+    document.getElementById('modalDays').textContent = `Ты продержался ${days} ${days===1?'день':days<5?'дня':'дней'}. Вот что сбросится:`;
+    document.getElementById('modalRestartText').innerHTML =
+      resetItems.map(r => `<strong>${r.icon} ${r.title}:</strong> ${r.val}`).join('<br>') ||
+      '<strong>Весь прогресс</strong> сбрасывается к нулю.';
+  }
+
+  document.getElementById('modal').classList.add('show');
+}
+
+function closeModal(e) {
+  if (e === null || e.target === document.getElementById('modal')) {
+    document.getElementById('modal').classList.remove('show');
+  }
+}
+
+function handleFail() {
+  const s = getState();
+  const days = getDays(s.start);
+  if (days > 0) {
+    s.best = Math.max(s.best || 0, days);
+    s.start = null;
+    saveState(s);
+  }
+  document.getElementById('modal').classList.remove('show');
+  render();
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
