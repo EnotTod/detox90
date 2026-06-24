@@ -280,6 +280,18 @@
   .vow input { width: 24px; height: 24px; accent-color: var(--red); flex-shrink: 0; margin: 0; }
   .vow label { font-size: 14px; color: var(--text); line-height: 1.4; cursor: pointer; }
   .btn-confirm-fail:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  /* HISTORY OF RELAPSES */
+  .history-list { padding: 0 20px; }
+  .history-empty { padding: 0 20px; font-size: 13px; color: var(--muted); line-height: 1.5; }
+  .hist-item { display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--bg2); border: 0.5px solid var(--border); border-radius: 12px; margin-bottom: 8px; }
+  .hist-num { width: 28px; height: 28px; border-radius: 8px; background: var(--bg3); color: var(--muted); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex-shrink: 0; }
+  .hist-body { flex: 1; min-width: 0; }
+  .hist-top { font-size: 13px; font-weight: 500; color: var(--text); }
+  .hist-sub { font-size: 11px; color: var(--muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hist-badge { font-size: 10px; font-weight: 600; padding: 4px 8px; border-radius: 99px; flex-shrink: 0; text-transform: uppercase; letter-spacing: 0.03em; }
+  .hist-badge.done { background: var(--green-bg); color: var(--green); }
+  .hist-badge.pending { background: var(--red-bg); color: var(--red); }
 </style>
 </head>
 <body>
@@ -368,6 +380,12 @@
 <div class="section-wrap">
   <div class="section-title">достижения</div>
   <div class="achievements-list" id="achList"></div>
+</div>
+
+<div class="divider"></div>
+<div class="section-wrap">
+  <div class="section-title">история срывов — это не стирается</div>
+  <div class="history-list" id="historyList"></div>
 </div>
 
 <div class="buttons-section">
@@ -774,6 +792,7 @@ function getState() {
   const s = JSON.parse(localStorage.getItem('detox90_v3') || '{"start":null,"attempts":0,"best":0}');
   if (s.punishment === undefined) s.punishment = '';
   if (s.debt === undefined) s.debt = 0;
+  if (s.history === undefined) s.history = [];
   return s;
 }
 function saveState(s) { localStorage.setItem('detox90_v3', JSON.stringify(s)); }
@@ -870,6 +889,28 @@ function render() {
   } else {
     db.style.display = 'none';
   }
+
+  const hl = document.getElementById('historyList');
+  const hist = s.history || [];
+  if (hist.length === 0) {
+    hl.innerHTML = '<div class="history-empty">Здесь будут все твои срывы — навсегда. Чистый список = твоя гордость. Держись, чтобы он таким и остался.</div>';
+  } else {
+    hl.innerHTML = hist.slice().reverse().map((h, i) => {
+      const n = hist.length - i;
+      const d = new Date(h.date);
+      const dateStr = d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' });
+      const dayWord = h.days === 1 ? 'день' : h.days < 5 ? 'дня' : 'дней';
+      const pun = h.punishment ? h.punishment : 'наказание не было задано';
+      return `<div class="hist-item">
+        <div class="hist-num">${n}</div>
+        <div class="hist-body">
+          <div class="hist-top">Срыв на ${h.days} ${dayWord} · ${dateStr}</div>
+          <div class="hist-sub">${pun}</div>
+        </div>
+        <div class="hist-badge ${h.done ? 'done' : 'pending'}">${h.done ? '✓ выполнено' : '⏳ долг'}</div>
+      </div>`;
+    }).join('');
+  }
 }
 
 // ─── ACTIONS ────────────────────────────────────────────────────────────────
@@ -942,12 +983,13 @@ function handleFail() {
     s.best = Math.max(s.best || 0, days);
     s.start = null;
     if (s.punishment) s.debt = (s.debt || 0) + 1;
+    s.history.push({ date: Date.now(), days: days, punishment: s.punishment || '', done: false });
     saveState(s);
   }
   document.getElementById('modal').classList.remove('show');
   render();
-  if (s.debt > 0) {
-    setTimeout(() => alert(`⛓️ Теперь ты должен выполнить наказание:\n\n${s.punishment}\n\nНе откладывай. Срыв должен быть болезненным.`), 350);
+  if (s.punishment) {
+    setTimeout(() => alert(`⛓️ Теперь ты должен выполнить наказание:\n\n${s.punishment}\n\nЭтот срыв останется в истории навсегда. Не откладывай.`), 350);
   }
 }
 
@@ -968,6 +1010,8 @@ function completePunishment() {
   const s = getState();
   if (s.debt > 0 && confirm('Ты честно выполнил наказание?\n\n' + s.punishment)) {
     s.debt -= 1;
+    const pending = s.history.find(h => !h.done);
+    if (pending) pending.done = true;
     saveState(s);
     render();
     if (window.navigator.vibrate) window.navigator.vibrate(30);
