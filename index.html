@@ -256,6 +256,30 @@
   }
   .change-card.nofap-hl { border-color: #534AB7; background: rgba(83,74,183,0.12); }
   .change-card.nofap-hl .change-title { color: #7F77DD; }
+
+  /* PUNISHMENT */
+  .punishment-card { margin: 0 20px 12px; background: var(--bg2); border: 0.5px solid var(--border); border-radius: 18px; padding: 16px; }
+  .pc-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .pc-title { font-size: 13px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 6px; }
+  .pc-edit { background: var(--bg3); border: none; color: var(--accent); font-size: 12px; font-weight: 500; padding: 7px 14px; border-radius: 99px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .pc-edit:active { transform: scale(0.95); }
+  .pc-text { font-size: 14px; color: var(--text); line-height: 1.5; }
+  .pc-text.empty { color: var(--muted); }
+  .debt-banner { margin: 0 20px 12px; background: var(--red-bg); border: 0.5px solid var(--red); border-radius: 18px; padding: 16px; }
+  .debt-head { font-size: 13px; font-weight: 700; color: var(--red); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .debt-body { font-size: 13px; color: var(--muted); line-height: 1.5; margin-bottom: 12px; }
+  .debt-pun { color: var(--text); font-weight: 500; }
+  .btn-done-punish { width: 100%; background: var(--red); color: white; border: none; border-radius: 12px; padding: 13px; font-size: 14px; font-weight: 600; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .btn-done-punish:active { transform: scale(0.98); }
+
+  /* MODAL PUNISHMENT */
+  .modal-punishment { background: var(--red-bg); border: 1px solid var(--red); border-radius: 14px; padding: 16px; margin-bottom: 14px; }
+  .mp-label { font-size: 11px; font-weight: 700; color: var(--red); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .mp-text { font-size: 17px; font-weight: 700; color: var(--text); line-height: 1.4; }
+  .vow { display: flex; align-items: flex-start; gap: 12px; padding: 14px; background: var(--bg3); border-radius: 12px; margin-bottom: 16px; cursor: pointer; }
+  .vow input { width: 24px; height: 24px; accent-color: var(--red); flex-shrink: 0; margin: 0; }
+  .vow label { font-size: 14px; color: var(--text); line-height: 1.4; cursor: pointer; }
+  .btn-confirm-fail:disabled { opacity: 0.35; cursor: not-allowed; }
 </style>
 </head>
 <body>
@@ -326,6 +350,20 @@
   <div class="changes-grid" id="restartGrid"></div>
 </div>
 
+<div id="debtBanner" class="debt-banner" style="display:none">
+  <div class="debt-head">⛓️ <span id="debtCount"></span></div>
+  <div class="debt-body">Пока не выполнишь — ты в долгу перед собой. Наказание: <span class="debt-pun" id="debtPun"></span></div>
+  <button class="btn-done-punish" onclick="completePunishment()">✓ Выполнил наказание</button>
+</div>
+
+<div class="punishment-card">
+  <div class="pc-head">
+    <div class="pc-title">🔒 Моё наказание за срыв</div>
+    <button class="pc-edit" onclick="editPunishment()">изменить</button>
+  </div>
+  <div class="pc-text" id="punishmentText"></div>
+</div>
+
 <div class="divider"></div>
 <div class="section-wrap">
   <div class="section-title">достижения</div>
@@ -344,8 +382,16 @@
     <div class="modal-title" id="modalTitle">Ты уверен?</div>
     <div class="modal-days" id="modalDays"></div>
     <div class="modal-restart-text" id="modalRestartText"></div>
+    <div class="modal-punishment" id="modalPunishment" style="display:none">
+      <div class="mp-label">⛓️ Твоё наказание</div>
+      <div class="mp-text" id="modalPunishmentText"></div>
+    </div>
+    <label class="vow" id="vowBlock" style="display:none">
+      <input type="checkbox" id="vowCheck" onchange="toggleVow()">
+      <label for="vowCheck">Клянусь выполнить наказание. Срыв не бывает бесплатным.</label>
+    </label>
     <div class="modal-btns">
-      <button class="btn-confirm-fail" onclick="handleFail()">Да, сорвался — начать заново</button>
+      <button class="btn-confirm-fail" id="confirmFailBtn" onclick="handleFail()">Да, сорвался — начать заново</button>
       <button class="btn-back" onclick="closeModal(null)">Нет, держусь дальше</button>
     </div>
   </div>
@@ -725,7 +771,10 @@ const ACHIEVEMENTS = [
 // ─── STATE ──────────────────────────────────────────────────────────────────
 
 function getState() {
-  return JSON.parse(localStorage.getItem('detox90_v3') || '{"start":null,"attempts":0,"best":0}');
+  const s = JSON.parse(localStorage.getItem('detox90_v3') || '{"start":null,"attempts":0,"best":0}');
+  if (s.punishment === undefined) s.punishment = '';
+  if (s.debt === undefined) s.debt = 0;
+  return s;
 }
 function saveState(s) { localStorage.setItem('detox90_v3', JSON.stringify(s)); }
 function getDays(start) {
@@ -802,6 +851,25 @@ function render() {
       <div class="ach-day ${done ? 'done' : ''}">д. ${a.day}</div>
     </div>`;
   }).join('');
+
+  const pt = document.getElementById('punishmentText');
+  if (s.punishment) {
+    pt.textContent = s.punishment;
+    pt.classList.remove('empty');
+  } else {
+    pt.textContent = 'Не задано. Нажми «изменить» и придумай жёсткое наказание за срыв.';
+    pt.classList.add('empty');
+  }
+
+  const db = document.getElementById('debtBanner');
+  if (s.debt > 0) {
+    db.style.display = '';
+    const word = s.debt === 1 ? 'наказание' : s.debt < 5 ? 'наказания' : 'наказаний';
+    document.getElementById('debtCount').textContent = `Долг: ${s.debt} ${word}`;
+    document.getElementById('debtPun').textContent = s.punishment || '—';
+  } else {
+    db.style.display = 'none';
+  }
 }
 
 // ─── ACTIONS ────────────────────────────────────────────────────────────────
@@ -820,11 +888,18 @@ function handleOk() {
 function showFailModal() {
   const s = getState();
   const days = getDays(s.start);
+  const punBlock = document.getElementById('modalPunishment');
+  const vowBlock = document.getElementById('vowBlock');
+  const vowCheck = document.getElementById('vowCheck');
+  const confirmBtn = document.getElementById('confirmFailBtn');
 
   if (days === 0) {
     document.getElementById('modalTitle').textContent = 'Ты ещё не начал';
     document.getElementById('modalDays').textContent = 'Нажми «Держусь» — это твой первый шаг.';
     document.getElementById('modalRestartText').innerHTML = 'Кнопка «Сорвался» есть только для тех кто уже держится.';
+    punBlock.style.display = 'none';
+    vowBlock.style.display = 'none';
+    confirmBtn.disabled = false;
   } else {
     const data = getDayData(days);
     const resetItems = data.resets || [];
@@ -833,9 +908,25 @@ function showFailModal() {
     document.getElementById('modalRestartText').innerHTML =
       resetItems.map(r => `<strong>${r.icon} ${r.title}:</strong> ${r.val}`).join('<br>') ||
       '<strong>Весь прогресс</strong> сбрасывается к нулю.';
+
+    if (s.punishment) {
+      punBlock.style.display = '';
+      document.getElementById('modalPunishmentText').textContent = s.punishment;
+      vowBlock.style.display = '';
+      vowCheck.checked = false;
+      confirmBtn.disabled = true;
+    } else {
+      punBlock.style.display = 'none';
+      vowBlock.style.display = 'none';
+      confirmBtn.disabled = false;
+    }
   }
 
   document.getElementById('modal').classList.add('show');
+}
+
+function toggleVow() {
+  document.getElementById('confirmFailBtn').disabled = !document.getElementById('vowCheck').checked;
 }
 
 function closeModal(e) {
@@ -850,10 +941,37 @@ function handleFail() {
   if (days > 0) {
     s.best = Math.max(s.best || 0, days);
     s.start = null;
+    if (s.punishment) s.debt = (s.debt || 0) + 1;
     saveState(s);
   }
   document.getElementById('modal').classList.remove('show');
   render();
+  if (s.debt > 0) {
+    setTimeout(() => alert(`⛓️ Теперь ты должен выполнить наказание:\n\n${s.punishment}\n\nНе откладывай. Срыв должен быть болезненным.`), 350);
+  }
+}
+
+function editPunishment() {
+  const s = getState();
+  const val = prompt(
+    'Придумай наказание за срыв.\n\nЧто-то реально неприятное: 100 отжиманий, ледяной душ 5 минут, перевести 2000₽ другу, удалить любимую игру. Чем жёстче — тем сильнее не захочется срываться.',
+    s.punishment || ''
+  );
+  if (val !== null) {
+    s.punishment = val.trim();
+    saveState(s);
+    render();
+  }
+}
+
+function completePunishment() {
+  const s = getState();
+  if (s.debt > 0 && confirm('Ты честно выполнил наказание?\n\n' + s.punishment)) {
+    s.debt -= 1;
+    saveState(s);
+    render();
+    if (window.navigator.vibrate) window.navigator.vibrate(30);
+  }
 }
 
 // ─── INIT ────────────────────────────────────────────────────────────────────
